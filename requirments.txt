@@ -1,0 +1,7 @@
+aeneas
+librosa
+nltk
+numpy
+stop-words
+tensorflow
+torch
