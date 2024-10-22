@@ -3,6 +3,6 @@ This repository provides training and evaluation code for the paper Speech Emoti
 
 
 Steps:
-Create the speech2vec segmentation by running speech2word_mapping.py.
-Run generate_tfrecords.py to create tfrecords.
-Run train.py to train the models.
+1. Create the speech2vec segmentation by running speech2word_mapping.py.
+2. Run generate_tfrecords.py to create tfrecords.
+3. Run train.py to train the models.
