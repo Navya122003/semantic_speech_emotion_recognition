@@ -58,7 +58,7 @@ def train():
             return total_loss
 
     # Training loop
-    for epoch in range(5): 
+    for epoch in range(100): 
         loss = train_step()
         print(f'Epoch {epoch + 1}, Loss: {loss}')
 
