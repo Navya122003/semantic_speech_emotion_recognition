@@ -13,17 +13,17 @@ FLAGS = {
     'sent_dataset_dir': SENT_DATASET_DIR,
     'word_dataset_dir': WORD_DATASET_DIR,
     'train_dir': 'C:/Users/gupta/Downloads/small_test_dataset/checkpoints/',
-    'learning_rate': 0.0005,
+    'learning_rate': 0.05,
     'batch_size': 5,
-    'hidden_units': 256,
-    'model': 'audio_model2',
+    'hidden_units': 2,
+    'model': 'AudioModel2',
     'sequence_length': 100,
     'data_unit': None,
     'liking': True
 }
 
 def train():
-    tf.random.set_seed(1) 
+    tf.random.set_seed(1)
     
     audio_frames, word_embeddings, ground_truth = get_split(
         FLAGS['dataset_dir'], True, FLAGS['batch_size'], seq_length=FLAGS['sequence_length']
@@ -32,6 +32,21 @@ def train():
     model = AudioModel2()
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=FLAGS['learning_rate'], beta_1=0.9, beta_2=0.99)
+
+     # Prepare for logging
+    log_dir = os.path.join(FLAGS['train_dir'], 'logs')
+    summary_writer = tf.summary.create_file_writer(log_dir)
+
+    # Model Checkpoint callback
+    checkpoint_path = os.path.join(FLAGS['train_dir'], 'model_{epoch:02d}.weights.h5')
+    model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+        filepath=checkpoint_path,
+        save_weights_only=True,
+        monitor='loss',
+        save_best_only=True,
+        mode='min',
+        verbose=1
+    )
 
     @tf.function
     def train_step():
@@ -58,9 +73,17 @@ def train():
             return total_loss
 
     # Training loop
-    for epoch in range(100): 
+    for epoch in range(5):  # Example of 5 epochs
         loss = train_step()
         print(f'Epoch {epoch + 1}, Loss: {loss}')
 
+        # Log loss to TensorBoard
+        with summary_writer.as_default():
+            tf.summary.scalar('loss', loss, step=epoch)
+
+        # Save model checkpoints
+        model.save_weights(checkpoint_path.format(epoch=epoch))
+        
 if __name__ == '__main__':
     train()
+
