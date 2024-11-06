@@ -1,6 +1,19 @@
 import tensorflow as tf
 from tensorflow.keras import layers, Model
 
+class AttentionLayer(tf.keras.layers.Layer):
+    def __init__(self):
+        super(AttentionLayer, self).__init__()
+        self.attention_dense = tf.keras.layers.Dense(1, activation='tanh') 
+
+    def call(self, inputs):
+        attention_scores = self.attention_dense(inputs)  
+        attention_weights = tf.nn.softmax(attention_scores, axis=1) 
+
+        weighted_inputs = inputs * attention_weights
+
+        return weighted_inputs  
+
 def recurrent_model(inputs, emb=None, hidden_units=256, number_of_outputs=3):
     fused_features = attention_model(inputs, emb, projected_units=1024)
 
@@ -14,9 +27,13 @@ def recurrent_model(inputs, emb=None, hidden_units=256, number_of_outputs=3):
     lstm_layer = tf.keras.layers.LSTM(hidden_units, return_sequences=True)
     outputs = lstm_layer(net)
 
-    prediction = tf.keras.layers.Dense(number_of_outputs, activation='tanh')(outputs)
+    attention_layer = AttentionLayer()
+    attention_outputs = attention_layer(outputs) 
+
+    prediction = tf.keras.layers.Dense(number_of_outputs, activation='tanh')(attention_outputs)  
 
     return prediction
+
 
 class AudioModel2(Model):
     def __init__(self):
@@ -32,6 +49,8 @@ class AudioModel2(Model):
         self.conv3 = layers.Conv1D(250, 6, padding='same', activation='relu')
         self.pool3 = layers.MaxPooling1D(pool_size=5, strides=5)
         self.drop3 = layers.Dropout(0.5)
+
+        self.attention = AttentionLayer()
 
     def call(self, audio_frames):
         batch_size, seq_length, num_features = tf.shape(audio_frames)[0], tf.shape(audio_frames)[1], tf.shape(audio_frames)[2]
@@ -52,6 +71,8 @@ class AudioModel2(Model):
 
         net = tf.reshape(net, [batch_size, seq_length, -1])
 
+        net = self.attention(net)
+
         return net
 
 
@@ -63,7 +84,6 @@ def fully_connected_model(audio_frames, text_frames):
     net = layers.Dense(512, activation='relu')(net)
 
     return net
-
 
 def attention_model(audio_frames, text_frames, projected_units=2048, scope=''):
     batch_size, seq_length, num_features = tf.shape(audio_frames)[0], tf.shape(audio_frames)[1], tf.shape(audio_frames)[2]
@@ -132,4 +152,3 @@ def get_model(name):
         return output  
 
     return wrapper
-
